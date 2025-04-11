@@ -1,0 +1,56 @@
+  File "/home/swx/diffusion_policy/train.py", line 32, in main
+    workspace.run()
+  File "/home/swx/diffusion_policy/diffusion_policy/workspace/train_diffusion_unet_hybrid_workspace.py", line 166, in run
+    raw_loss = self.model.compute_loss(batch)
+  File "/home/swx/diffusion_policy/diffusion_policy/policy/diffusion_unet_hybrid_image_policy.py", line 302, in compute_loss
+    nobs_features = self.obs_encoder(this_nobs)
+  File "/home/swx/anaconda3/envs/robodiff/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1130, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/home/swx/anaconda3/envs/robodiff/lib/python3.9/site-packages/robomimic/models/obs_nets.py", line 230, in forward
+    x = self.obs_randomizers[k].forward_in(x)
+  File "/home/swx/diffusion_policy/diffusion_policy/model/vision/crop_randomizer.py", line 88, in forward_in
+    out, _ = sample_random_image_crops(
+  File "/home/swx/diffusion_policy/diffusion_policy/model/vision/crop_randomizer.py", line 281, in sample_random_image_crops
+    crops = crop_image_from_indices(
+  File "/home/swx/diffusion_policy/diffusion_policy/model/vision/crop_randomizer.py", line 178, in crop_image_from_indices
+    assert (crop_indices[..., 0] >= 0).all().item()
+AssertionError
+
+
+ObservationEncoder(
+    Key(
+        name=agent_pos
+        shape=[7]
+        modality=low_dim
+        randomizer=None
+        net=None
+        sharing_from=None
+    )
+    Key(
+        name=cam_front_img
+        shape=[3, 480, 640]
+        modality=rgb
+        randomizer=CropRandomizer(input_shape=[3, 480, 640], crop_size=[84, 84], num_crops=1)
+        net=VisualCore(
+          input_shape=[3, 84, 84]
+          output_shape=[64]
+          backbone_net=ResNet18Conv(input_channel=3, input_coord_conv=False)
+          pool_net=SpatialSoftmax(num_kp=32, temperature=1.0, noise=0.0)
+        )
+        sharing_from=None
+    )
+    Key(
+        name=cam_wrist_img
+        shape=[3, 480, 640]
+        modality=rgb
+        randomizer=CropRandomizer(input_shape=[3, 480, 640], crop_size=[84, 84], num_crops=1)
+        net=VisualCore(
+          input_shape=[3, 84, 84]
+          output_shape=[64]
+          backbone_net=ResNet18Conv(input_channel=3, input_coord_conv=False)
+          pool_net=SpatialSoftmax(num_kp=32, temperature=1.0, noise=0.0)
+        )
+        sharing_from=None
+    )
+    output_shape=[135]
+)

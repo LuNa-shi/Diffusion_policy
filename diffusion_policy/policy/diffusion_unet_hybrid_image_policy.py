@@ -96,7 +96,7 @@ class DiffusionUnetHybridImagePolicy(BaseImagePolicy):
                 config=config,
                 obs_key_shapes=obs_key_shapes,
                 ac_dim=action_dim,
-                device='cpu',
+                device='cuda',
             )
 
         obs_encoder = policy.nets['policy'].nets['encoder'].nets['obs']
@@ -284,6 +284,7 @@ class DiffusionUnetHybridImagePolicy(BaseImagePolicy):
     def compute_loss(self, batch):
         # normalize input
         assert 'valid_mask' not in batch
+
         nobs = self.normalizer.normalize(batch['obs'])
         nactions = self.normalizer['action'].normalize(batch['action'])
         batch_size = nactions.shape[0]
@@ -298,7 +299,7 @@ class DiffusionUnetHybridImagePolicy(BaseImagePolicy):
             # reshape B, T, ... to B*T
             this_nobs = dict_apply(nobs, 
                 lambda x: x[:,:self.n_obs_steps,...].reshape(-1,*x.shape[2:]))
-            nobs_features = self.obs_encoder(this_nobs)
+            nobs_features = self.obs_encoder.forward(this_nobs)
             # reshape back to B, Do
             global_cond = nobs_features.reshape(batch_size, -1)
         else:

@@ -89,9 +89,12 @@ class ConditionalUnet1D(nn.Module):
             nn.Linear(dsed * 4, dsed),
         )
         cond_dim = dsed
+        #global_cond_dim: 270
+        #dsed: 128
         if global_cond_dim is not None:
             cond_dim += global_cond_dim
 
+        #cond_dim: 398
         in_out = list(zip(all_dims[:-1], all_dims[1:]))
 
         local_cond_encoder = None

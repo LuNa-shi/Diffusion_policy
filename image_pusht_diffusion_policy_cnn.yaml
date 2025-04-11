@@ -3,15 +3,15 @@ checkpoint:
   save_last_ckpt: true
   save_last_snapshot: false
   topk:
-    format_str: epoch={epoch:04d}-test_mean_score={test_mean_score:.3f}.ckpt
+    format_str: epoch={epoch:04d}-val_loss={val_loss:.3f}.ckpt
     k: 5
     mode: max
-    monitor_key: test_mean_score
+    monitor_key: val_loss
 dataloader:
-  batch_size: 64
-  num_workers: 8
+  batch_size: 16
+  num_workers: 2
   persistent_workers: false
-  pin_memory: true
+  pin_memory: false
   shuffle: true
 dataset_obs_steps: 2
 ema:
@@ -28,12 +28,12 @@ logging:
   group: null
   id: null
   mode: online
-  name: 2023.01.16-20.20.06_train_diffusion_unet_hybrid_pusht_image
+  name: 2025.3.17.blue_can
   project: diffusion_policy_debug
   resume: true
   tags:
   - train_diffusion_unet_hybrid
-  - pusht_image
+  - jaka_s5
   - default
 multi_run:
   run_dir: data/outputs/2023.01.16/20.20.06_train_diffusion_unet_hybrid_pusht_image
@@ -84,32 +84,44 @@ policy:
   shape_meta:
     action:
       shape:
-      - 2
+      - 7
     obs:
       agent_pos:
         shape:
-        - 2
+        - 7
         type: low_dim
-      image:
+      cam_front_img:
         shape:
         - 3
-        - 96
-        - 96
+        - 480
+        - 640
+        type: rgb
+      cam_wrist_img:
+        shape:
+        - 3
+        - 480
+        - 640
         type: rgb
 shape_meta:
   action:
     shape:
-    - 2
+    - 7
   obs:
     agent_pos:
       shape:
-      - 2
+      - 7
       type: low_dim
-    image:
+    cam_front_img:
       shape:
       - 3
-      - 96
-      - 96
+      - 480
+      - 640
+      type: rgb
+    cam_wrist_img:
+      shape:
+      - 3
+      - 480
+      - 640
       type: rgb
 task:
   dataset:
@@ -119,44 +131,50 @@ task:
     pad_after: 7
     pad_before: 1
     seed: 42
-    val_ratio: 0.02
-    zarr_path: data/pusht/pusht_cchi_v7_replay.zarr
-  env_runner:
-    _target_: diffusion_policy.env_runner.pusht_image_runner.PushTImageRunner
-    fps: 10
-    legacy_test: true
-    max_steps: 300
-    n_action_steps: 8
-    n_envs: null
-    n_obs_steps: 2
-    n_test: 50
-    n_test_vis: 4
-    n_train: 6
-    n_train_vis: 2
-    past_action: false
-    test_start_seed: 100000
-    train_start_seed: 0
+    val_ratio: 0.2
+    zarr_path: data/jaka_s5/blue_can-20241127-21.zarr
+  # env_runner:
+  #   _target_: diffusion_policy.env_runner.pusht_image_runner.PushTImageRunner
+  #   fps: 10
+  #   legacy_test: true
+  #   max_steps: 300
+  #   n_action_steps: 8
+  #   n_envs: null
+  #   n_obs_steps: 2
+  #   n_test: 50
+  #   n_test_vis: 4
+  #   n_train: 6
+  #   n_train_vis: 2
+  #   past_action: false
+  #   test_start_seed: 100000
+  #   train_start_seed: 0
   image_shape:
   - 3
-  - 96
-  - 96
-  name: pusht_image
+  - 480
+  - 640
+  name: blue_can
   shape_meta:
     action:
       shape:
-      - 2
+      - 7
     obs:
       agent_pos:
         shape:
-        - 2
+        - 7
         type: low_dim
-      image:
+      cam_front_img:
         shape:
         - 3
-        - 96
-        - 96
+        - 480
+        - 640
         type: rgb
-task_name: pusht_image
+      cam_wrist_img:
+        shape:
+        - 3
+        - 480
+        - 640
+        type: rgb
+task_name: blue_can
 training:
   checkpoint_every: 50
   debug: false
@@ -166,7 +184,7 @@ training:
   lr_warmup_steps: 500
   max_train_steps: null
   max_val_steps: null
-  num_epochs: 3050
+  num_epochs: 300
   resume: true
   rollout_every: 50
   sample_every: 5
@@ -175,8 +193,8 @@ training:
   use_ema: true
   val_every: 1
 val_dataloader:
-  batch_size: 64
-  num_workers: 8
+  batch_size: 16
+  num_workers: 2
   persistent_workers: false
-  pin_memory: true
+  pin_memory: false
   shuffle: false
