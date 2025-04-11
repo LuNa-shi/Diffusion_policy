@@ -1,0 +1,19 @@
+# ======================= 核心框架 ======================= 
+ray[default,tune]==2.2.0  # 分布式计算框架[1](@ref)
+
+# ======================= 物理引擎集成 =======================
+free-mujoco-py==2.1.6  # MuJoCo 封装（需先安装系统依赖：libosmesa6-dev libgl1-mesa-glx libglfw3 patchelf）
+pybullet-svl==3.1.6.4  # PyBullet 增强版
+
+# ======================= 机器人仿真套件 =======================
+robosuite @ https://github.com/cheng-chi/robosuite/archive/277ab9588ad7a4f4b55cf75508b44aa67ec171f0.tar.gz
+robomimic==0.2.0  # 机器人模仿学习工具包[6](@ref)
+
+# ======================= 强化学习组件 =======================
+pytorchvideo==0.1.5  # 视频处理工具包
+r3m @ https://github.com/facebookresearch/r3m/archive/b2334e726887fa0206962d7984c69c5fb09cceab.tar.gz  # 视觉表征模型
+
+# ======================= 辅助工具库 =======================
+pygame==2.1.2  # 游戏引擎
+dm-control==1.0.9  # DeepMind 控制套件
+imagecodecs==2022.9.26  # 图像编解码（支持jpeg-xl）

@@ -64,7 +64,7 @@ class LinearNormalizer(DictOfTensorMixin):
             params = self.params_dict['_default']
             return _normalize(x, params, forward=forward)
 
-    def normalize(self, x: Union[Dict, torch.Tensor, np.ndarray]) -> torch.Tensor:
+    def  normalize(self, x: Union[Dict, torch.Tensor, np.ndarray]) -> torch.Tensor:
         return self._normalize_impl(x, forward=True)
 
     def unnormalize(self, x: Union[Dict, torch.Tensor, np.ndarray]) -> torch.Tensor:

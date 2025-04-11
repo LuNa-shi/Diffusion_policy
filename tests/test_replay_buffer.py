@@ -38,25 +38,36 @@ def test():
 
 
 def test_real():
-    import os
-    dist_group = zarr.open(
-        os.path.expanduser('~/dev/diffusion_policy/data/pusht/pusht_cchi_v2.zarr'), 'r')
+    # import os
+    # dist_group = zarr.open(
+    #     os.path.expanduser('/home/swx/diffusion_policy/data/jaka_s5/blue_can-20241127-21.zarr'), 'r')
 
-    buff = ReplayBuffer.create_empty_numpy()
-    key, group = next(iter(dist_group.items()))
-    for key, group in dist_group.items():
-        buff.add_episode(group)
+    # buff = ReplayBuffer.create_empty_numpy()
+    # key, group = next(iter(dist_group.items()))
+    # for key, group in dist_group.items():
+    #     buff.add_episode(group)
 
     # out_path = os.path.expanduser('~/dev/diffusion_policy/data/pusht_cchi2_v2_replay.zarr')
-    out_path = os.path.expanduser('~/dev/diffusion_policy/data/test.zarr')
-    out_store = zarr.DirectoryStore(out_path)
-    buff.save_to_store(out_store)
+    out_path = os.path.expanduser('/home/swx/diffusion_policy/data/jaka_s5/blue_can-20241127-21.zarr')
+    # out_store = zarr.DirectoryStore(out_path)
+    # buff.save_to_store(out_store)
 
     buff = ReplayBuffer.copy_from_path(out_path, store=zarr.MemoryStore())
-    buff.pop_episode()
+    episode = buff.get_episode(50)
+    for key, value in episode.items():
+        print(key, value.shape)
+    print(buff.n_episodes)
 
 
 def test_pop():
     buff = ReplayBuffer.create_from_path(
-        '/home/chengchi/dev/diffusion_policy/data/pusht_cchi_v3_replay.zarr',
+        "/home/swx/diffusion_policy/data/jaka_s5/blue_can-20241127-21.zarr",
         mode='rw')
+    episode = buff.pop_episode()
+    for key, value in episode.items():
+        print(key, value.shape)
+
+if __name__ == '__main__':
+    test_real()
+    print('done')
+

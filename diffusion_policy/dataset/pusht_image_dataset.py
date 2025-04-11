@@ -23,7 +23,7 @@ class PushTImageDataset(BaseImageDataset):
         
         super().__init__()
         self.replay_buffer = ReplayBuffer.copy_from_path(
-            zarr_path, keys=['img', 'state', 'action'])
+            zarr_path, keys=['cam_front_img','cam_wrist_img', 'state', 'action'])
         val_mask = get_val_mask(
             n_episodes=self.replay_buffer.n_episodes, 
             val_ratio=val_ratio,
@@ -64,19 +64,23 @@ class PushTImageDataset(BaseImageDataset):
         }
         normalizer = LinearNormalizer()
         normalizer.fit(data=data, last_n_dims=1, mode=mode, **kwargs)
-        normalizer['image'] = get_image_range_normalizer()
+        normalizer['cam_front_img'] = get_image_range_normalizer()
+        normalizer['cam_wrist_img'] = get_image_range_normalizer()
+        
         return normalizer
 
     def __len__(self) -> int:
         return len(self.sampler)
 
     def _sample_to_data(self, sample):
-        agent_pos = sample['state'][:,:2].astype(np.float32) # (agent_posx2, block_posex3)
-        image = np.moveaxis(sample['img'],-1,1)/255
+        agent_pos = sample['state'][:,:7].astype(np.float32) # (agent_posx2, block_posex3)
+        image_front = sample['cam_front_img']/255
+        image_wrist = sample['cam_wrist_img']/255
 
         data = {
             'obs': {
-                'image': image, # T, 3, 96, 96
+                'cam_front_img': image_front, # T, 3, H, W
+                'cam_wrist_img': image_wrist, # T, 3, H, W
                 'agent_pos': agent_pos, # T, 2
             },
             'action': sample['action'].astype(np.float32) # T, 2
