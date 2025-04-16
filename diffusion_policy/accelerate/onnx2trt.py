@@ -1,4 +1,5 @@
 import tensorrt as trt
+
 import numpy as np
 
 # 定义日志记录器
@@ -35,27 +36,8 @@ def build_engine(onnx_file_path, engine_file_path):
     config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, 1 << 30)  # 1GB
     
     # 设置 FP16 精度（如果需要）
-    if builder.platform_has_fast_fp16:
-        config.set_flag(trt.BuilderFlag.FP16)
-    
-    # 创建优化配置文件
-    profile = builder.create_optimization_profile()
-    
-    # 遍历网络输入，设置动态形状范围
-    for i in range(network.num_inputs):
-        input = network.get_input(i)
-        input_name = input.name
-        input_shape = input.shape  # 输入形状 (batch_size, ...)
-        
-        # 设置动态形状范围
-        if -1 in input_shape:  # 如果输入是动态形状
-            min_shape = (1, *input_shape[1:])  # 最小形状
-            opt_shape = (4, *input_shape[1:])  # 最优形状
-            max_shape = (8, *input_shape[1:])  # 最大形状
-            profile.set_shape(input_name, min_shape, opt_shape, max_shape)
-    
-    # 将优化配置文件添加到构建器配置中
-    config.add_optimization_profile(profile)
+    # if builder.platform_has_fast_fp16:
+    #     config.set_flag(trt.BuilderFlag.FP16)
     
     # 构建序列化的 TensorRT 引擎
     print("========Start serialize==============")
@@ -80,8 +62,59 @@ def build_engine(onnx_file_path, engine_file_path):
     return engine
 
 # 构建 TensorRT 引擎
-engine = build_engine("unet1d.onnx", "unet.engine")
+engine = build_engine("unet1d_noInstance.onnx", "unet_fp32.engine")
 if engine:
     print("TensorRT引擎已创建")
 else:
     print("TensorRT引擎创建失败")
+
+
+
+'''
+ONNX to TensorRT Conversion Utility
+This script converts an ONNX model to a TensorRT engine for faster inference.
+TensorRT Overview:
+-----------------
+TensorRT is NVIDIA's high-performance deep learning inference optimizer and runtime.
+It significantly improves inference performance on NVIDIA GPUs compared to
+frameworks like PyTorch or TensorFlow.
+Key Components:
+-------------
+1. Logger (TRT_LOGGER):
+    - Controls verbosity of TensorRT messages (WARNING level used here)
+2. Builder:
+    - Main TensorRT object that creates optimization profiles and networks
+3. Network:
+    - Represents the model structure
+    - EXPLICIT_BATCH flag allows for dynamic batch size support
+4. OnnxParser:
+    - Parses ONNX model into TensorRT's internal representation
+5. BuilderConfig:
+    - Contains settings for the optimization process
+    - Controls memory usage, precision modes, etc.
+6. OptimizationProfile:
+    - Defines input shape ranges for models with dynamic shapes
+    - Specifies min/optimal/max shapes for each input
+7. Runtime:
+    - Used to deserialize and execute the engine
+Key Features Demonstrated:
+------------------------
+- Dynamic shape handling with optimization profiles
+- FP16 precision enabling (when hardware supports it)
+- Workspace memory allocation (1GB in this example)
+- Engine serialization for later use without recompilation
+Usage:
+-----
+1. Call build_engine() with paths to:
+    - Input ONNX model file
+    - Output TensorRT engine file (.engine)
+2. The function returns the TensorRT engine object if successful, 
+    or None if errors occur during conversion.
+Notes for Beginners:
+------------------
+- TensorRT engines are platform-specific (must run on same GPU architecture)
+- Larger workspace sizes allow more optimizations but consume more GPU memory
+- Dynamic shapes allow flexibility but may reduce performance compared to fixed shapes
+- FP16 mode significantly improves performance with minimal accuracy loss on modern GPUs
+
+'''

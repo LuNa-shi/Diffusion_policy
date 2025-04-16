@@ -95,14 +95,14 @@ if __name__ == "__main__":
     # model = policy.model
     unet_model.eval()
 
-    batch_size = 1
-    # UNet的输入
-    sample = torch.randn(batch_size, horizon, input_dim)  # (B,T,D)格式
-    timestep = torch.zeros(batch_size, dtype=torch.long)  # (B,)格式
+    batch_size = 4  # 原来是1，现在改为4
+    # UNet的输入也需要修改为批次大小4
+    sample = torch.randn(batch_size, horizon, input_dim)  # (4,T,D)格式
+    timestep = torch.zeros(batch_size, dtype=torch.long)  # (4,)格式
 
-    # 始终为两个条件创建tensor，确保ONNX导出中包含这两个输入
-    dummy_local_cond = torch.zeros(batch_size, horizon, 1)  # 占位符
-    global_cond = torch.randn(batch_size, global_cond_dim)  # 实际使用的全局条件
+    # 条件输入也需要修改批次大小
+    dummy_local_cond = torch.zeros(batch_size, horizon, 1)  # 占位符，批次大小为4
+    global_cond = torch.randn(batch_size, global_cond_dim)  # 实际使用的全局条件，批次大小为4
 
     local_cond = None  # 在forward调用中仍使用None
     
@@ -119,7 +119,7 @@ if __name__ == "__main__":
             super().__init__()
             self.model = model
             
-        def forward(self, sample, timestep, dummy_local_cond, global_cond):
+        def forward(self, sample, timestep, global_cond):
             # 对于ONNX导出，我们始终传递实际参数，但在forward内部忽略dummy_local_cond
             return self.model(sample, timestep, local_cond=None, global_cond=global_cond)
 
@@ -128,22 +128,74 @@ if __name__ == "__main__":
     # ONNX导出时使用包装器和dummy输入
     torch.onnx.export(
         wrapper,
-        (sample, timestep, dummy_local_cond, global_cond),  # 使用dummy_local_cond确保ONNX中有这个输入
-        "unet1d.onnx",
-        input_names=['sample', 'timestep', 'local_cond', 'global_cond'],
+        (sample, timestep, global_cond),
+        "unet1d_noInstance.onnx",
+        input_names=['sample', 'timestep', 'global_cond'],
         output_names=['output'],
-        dynamic_axes={
-            'sample': {0: 'batch_size'},
-            'timestep': {0: 'batch_size'},
-            'local_cond': {0: 'batch_size'},
-            'global_cond': {0: 'batch_size'},
-            'output': {0: 'batch_size'}
-        },
+        training=torch.onnx.TrainingMode.EVAL,
+        # 移除dynamic_axes参数，使用固定批次大小
         opset_version=13
-
     )
     
-    model_onnx = onnx.load("unet1d.onnx")
+    model_onnx = onnx.load("unet1d_noInstance.onnx")
     # model_simp, check = onnxsim.simplify(model_onnx, skipped_optimizers=True,skip_shape_inference=False)
     # onnx.save(model_simp, "unet1d_simplified.onnx")
     print("UNet ONNX模型已导出并简化")
+
+    # 4. 测试ONNX模型，使用ONNX Runtime测试与PyTorch结果是否一致
+    print("\n===== 测试ONNX模型 =====")
+
+    import onnxruntime as ort
+    import numpy as np
+    # 创建ONNX Runtime会话
+    print("加载ONNX模型...")
+    ort_session = ort.InferenceSession("unet1d_noInstance.onnx", providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
+    
+    # 准备输入数据
+    ort_inputs = {
+        'sample': sample.numpy(),
+        'timestep': timestep.numpy(),
+        'global_cond': global_cond.numpy()
+    }
+    
+    # 再次使用PyTorch模型获取参考输出
+    print("运行PyTorch模型...")
+    with torch.no_grad():
+        pytorch_output = unet_model(sample, timestep, local_cond=None, global_cond=global_cond)
+        
+    # 运行ONNX Runtime推理
+    print("运行ONNX Runtime推理...")
+    ort_outputs = ort_session.run(None, ort_inputs)
+    ort_output = ort_outputs[0]  # 第一个输出即为我们需要的结果
+    
+    # 比较结果
+    pytorch_output_np = pytorch_output.numpy()
+    
+    # 检查形状是否一致
+    print(f"PyTorch输出形状: {pytorch_output_np.shape}")
+    print(f"ONNX输出形状: {ort_output.shape}")
+    
+    if pytorch_output_np.shape == ort_output.shape:
+        # 计算差异
+        abs_diff = np.abs(pytorch_output_np - ort_output)
+        max_diff = np.max(abs_diff)
+        mean_diff = np.mean(abs_diff)
+        
+        print(f"最大绝对误差: {max_diff}")
+        print(f"平均绝对误差: {mean_diff}")
+        
+        # 计算相对误差
+        pytorch_norm = np.linalg.norm(pytorch_output_np)
+        if pytorch_norm > 0:
+            rel_error = np.linalg.norm(ort_output - pytorch_output_np) / pytorch_norm
+            print(f"相对误差: {rel_error:.6f}")
+            
+            if rel_error < 1e-4:
+                print("✅ ONNX转换非常精确 - 可以安全使用ONNX模型")
+            elif rel_error < 1e-2:
+                print("⚠️ ONNX转换精度可接受 - 但请验证在您的应用中的影响")
+            else:
+                print("❌ ONNX转换精度较低 - 需要调查原因")
+    else:
+        print("❌ 输出形状不匹配!")
+

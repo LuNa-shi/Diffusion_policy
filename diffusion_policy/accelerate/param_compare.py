@@ -80,42 +80,31 @@ print(f"global_cond shape: {global_cond.shape if global_cond is not None else No
 input_data = {
     "sample": sample.numpy(),
     "timestep": timestep.numpy(),
-    "local_cond": global_cond.numpy()
+    "local_cond": global_cond.numpy() if local_cond is not None else None,
+    "global_cond": global_cond.numpy() if global_cond is not None else None,
 }
 
 # 过滤掉 None 输入
 # input_data = {k: v for k, v in input_data.items() if v is not None}
 
 # 测试未简化模型
-original_time = benchmark_model("unet1d.onnx", input_data)
-print(f"未简化模型的平均推理时间: {original_time:.2f} ms")
+# original_time = benchmark_model("unet1d.onnx", input_data)
+# print(f"未简化模型的平均推理时间: {original_time:.2f} ms")
 
-# 测试简化模型
-simplified_time = benchmark_model("unet1d_simplified.onnx", input_data)
-print(f"简化模型的平均推理时间: {simplified_time:.2f} ms")
 
-# 对比性能
-print(f"推理时间变化: {simplified_time - original_time:.2f} ms")
+# # 对比性能
+# print(f"推理时间变化: {simplified_time - original_time:.2f} ms")
 
-# 计算未简化模型的层数
-original_layers = count_layers("unet1d.onnx")
-print(f"未简化模型的层数: {original_layers}")
+# # 计算未简化模型的层数
+# original_layers = count_layers("unet1d.onnx")
+# print(f"未简化模型的层数: {original_layers}")
 
-# 计算简化模型的层数
-simplified_layers = count_layers("unet1d_simplified.onnx")
-print(f"简化模型的层数: {simplified_layers}")
 
-# 对比层数
-print(f"层数变化: {simplified_layers - original_layers}")
+# # 对比层数
+# print(f"层数变化: {simplified_layers - original_layers}")
 
 
 # 计算未简化模型的参数量
 original_params = count_parameters("unet1d.onnx")
 print(f"未简化模型的参数量: {original_params}")
 
-# 计算简化模型的参数量
-simplified_params = count_parameters("unet1d_simplified.onnx")
-print(f"简化模型的参数量: {simplified_params}")
-
-# 对比参数量
-print(f"参数量变化: {simplified_params - original_params}")
